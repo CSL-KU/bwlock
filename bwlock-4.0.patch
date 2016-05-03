@@ -1,0 +1,140 @@
+diff --git a/arch/x86/syscalls/syscall_64.tbl b/arch/x86/syscalls/syscall_64.tbl
+index 8d656fb..3228ed5 100644
+--- a/arch/x86/syscalls/syscall_64.tbl
++++ b/arch/x86/syscalls/syscall_64.tbl
+@@ -329,6 +329,7 @@
+ 320	common	kexec_file_load		sys_kexec_file_load
+ 321	common	bpf			sys_bpf
+ 322	64	execveat		stub_execveat
++330     64      bwlock                  sys_bwlock
+ 
+ #
+ # x32-specific system call numbers start at 512 to avoid cache impact
+diff --git a/include/linux/sched.h b/include/linux/sched.h
+index a419b65..3ca492d 100644
+--- a/include/linux/sched.h
++++ b/include/linux/sched.h
+@@ -1303,6 +1303,10 @@ struct task_struct {
+ #endif
+ 	struct sched_dl_entity dl;
+ 
++#ifdef CONFIG_BWLOCK
++	int bwlock_val;
++#endif
++
+ #ifdef CONFIG_PREEMPT_NOTIFIERS
+ 	/* list of struct preempt_notifier: */
+ 	struct hlist_head preempt_notifiers;
+diff --git a/include/linux/syscalls.h b/include/linux/syscalls.h
+index 76d1e38..9a4053e 100644
+--- a/include/linux/syscalls.h
++++ b/include/linux/syscalls.h
+@@ -873,6 +873,9 @@ asmlinkage long sys_process_vm_writev(pid_t pid,
+ 
+ asmlinkage long sys_kcmp(pid_t pid1, pid_t pid2, int type,
+ 			 unsigned long idx1, unsigned long idx2);
++
++asmlinkage long sys_bwlock(pid_t pid, int val);
++
+ asmlinkage long sys_finit_module(int fd, const char __user *uargs, int flags);
+ asmlinkage long sys_seccomp(unsigned int op, unsigned int flags,
+ 			    const char __user *uargs);
+diff --git a/init/Kconfig b/init/Kconfig
+index f5dbc6d..7540718 100644
+--- a/init/Kconfig
++++ b/init/Kconfig
+@@ -1134,6 +1134,11 @@ config DEBUG_BLK_CGROUP
+ 
+ endif # CGROUPS
+ 
++config BWLOCK
++	bool "Enable BWLOCK: Memory Bandwidth Lock"
++	help
++	  Enable BWLOCK: Memory Bandwidth Lock (works with MemGuard)
++
+ config CHECKPOINT_RESTORE
+ 	bool "Checkpoint/restore support" if EXPERT
+ 	default n
+diff --git a/kernel/sched/core.c b/kernel/sched/core.c
+index 62671f5..9180776 100644
+--- a/kernel/sched/core.c
++++ b/kernel/sched/core.c
+@@ -2152,6 +2152,14 @@ fire_sched_out_preempt_notifiers(struct task_struct *curr,
+  * prepare_task_switch sets up locking and calls architecture specific
+  * hooks.
+  */
++
++#if CONFIG_BWLOCK
++
++atomic_t bwlock_core_cnt;
++EXPORT_SYMBOL(bwlock_core_cnt);
++
++#endif
++
+ static inline void
+ prepare_task_switch(struct rq *rq, struct task_struct *prev,
+ 		    struct task_struct *next)
+@@ -2321,6 +2329,23 @@ context_switch(struct rq *rq, struct task_struct *prev,
+ }
+ 
+ /*
++ * nr_bwlocked_cores
++ * 
++ * Calculate the number of currently bandwidth locked cores
++ */
++int nr_bwlocked_cores(void)
++{
++	unsigned long i, sum = 0;
++
++	for_each_online_cpu(i)
++		sum += cpu_rq(i)->curr->bwlock_val;
++	
++	return sum;
++}
++
++EXPORT_SYMBOL(nr_bwlocked_cores);
++
++/*
+  * nr_running and nr_context_switches:
+  *
+  * externally visible scheduler statistics: current number of runnable
+@@ -3765,6 +3790,28 @@ err_size:
+ 	return -E2BIG;
+ }
+ 
++/*
++ * sys_bwlock - memory bandwidth lock
++ * @pid: pid of the process
++ * @val: bwlock value. 0 - unlock, 1 or bigger - locked
++ */
++SYSCALL_DEFINE2(bwlock, pid_t, pid, int, val)
++{
++	struct task_struct *p;
++
++	if (pid == 0 || current->pid == pid)
++		p = current;
++	else
++		p = find_process_by_pid(pid);
++
++	if (!p)
++		return -1;
++
++	p->bwlock_val = val;
++
++	return 0;
++}
++
+ /**
+  * sys_sched_setscheduler - set/change the scheduler policy and RT priority
+  * @pid: the pid in question.
+@@ -7094,6 +7141,10 @@ void __init sched_init(void)
+ 	int i, j;
+ 	unsigned long alloc_size = 0, ptr;
+ 
++#ifdef CONFIG_BWLOCK
++	atomic_set(&bwlock_core_cnt, 0);
++#endif
++
+ #ifdef CONFIG_FAIR_GROUP_SCHED
+ 	alloc_size += 2 * nr_cpu_ids * sizeof(void **);
+ #endif
