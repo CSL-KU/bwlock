@@ -27,9 +27,19 @@ Install & boot the BWLOCK enabled kernel.
 
 Build & install the bwlock kernel module
 ```
-   $ make 
+   $ make
+
+This will generate the "exe" directory containing the bandwidth lock kernel module. Go into this directory and install the kernel module using the following command:
+
+```
+   $ cd exe
    $ sudo insmod bwlockmod.ko 
 
+```
+In order to remove the generated files, do the following:
+
+```
+   $ make clean
 ```
 
 Usage
@@ -42,13 +52,16 @@ bw_lock()/bw_unlock().
 
 ```
   #include "bwlock.h"
-
+```
   bwlock_register (pid);
-  ...  
+
+```  
   bw_lock()
-  ...
+
+```
   bw_unlock()
-  ...
+
+```
   bwlock_unregister();
 
 ```
