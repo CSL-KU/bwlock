@@ -28,13 +28,13 @@ Install & boot the BWLOCK enabled kernel.
 Build & install the bwlock kernel module
 ```
    $ make
+```
 
 This will generate the "exe" directory containing the bandwidth lock kernel module. Go into this directory and install the kernel module using the following command:
 
 ```
    $ cd exe
    $ sudo insmod bwlockmod.ko 
-
 ```
 In order to remove the generated files, do the following:
 
@@ -52,16 +52,18 @@ bw_lock()/bw_unlock().
 
 ```
   #include "bwlock.h"
-```
-  bwlock_register (pid);
-
-```  
+  // register the current process (syscall)
+  bwlock_register (getpid());
+  
+  // request the bwlock (library call, not syscall)
   bw_lock()
-
-```
+  
+  // memory performance critical section
+  
+  // release the bwlock (library call, not syscall)
   bw_unlock()
-
-```
+  
+  // unregister the current process (syscall)
   bwlock_unregister();
 
 ```
@@ -69,7 +71,7 @@ bw_lock()/bw_unlock().
 Publication
 =============
 
-Heechul Yun, Santosh Gondi, Siddhartha Biswas. "Protecting Memory-Performance Critical Sections in Soft Real-Time Applications," In submission. [(pdf)](http://www.ittc.ku.edu/~heechul/papers/bwlock-submitted.pdf)
+Heechul Yun, Waqar Ali, Santosh Gondi, Siddhartha Biswas. "Protecting Memory-Performance Critical Sections in Soft Real-Time Applications," In preparation.
 
 
 
