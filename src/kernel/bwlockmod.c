@@ -1163,15 +1163,12 @@ static ssize_t bwlockmod_control_write(struct file *filp,
 
 static int bwlockmod_control_show(struct seq_file *m, void *v)
 {
-	char buf[64];
 	struct bwlockmod_info *global = &bwlockmod_info;
 
 	seq_printf(m, "reclaim: %d\n", g_use_reclaim);
 	seq_printf(m, "exclusive: %d\n", g_use_exclusive);
-	cpulist_scnprintf(buf, 64, global->active_mask);
-	seq_printf(m, "active: %s\n", buf);
-	cpulist_scnprintf(buf, 64, global->throttle_mask);
-	seq_printf(m, "throttle: %s\n", buf);
+	seq_printf(m, "active: %*pbl\n", cpumask_pr_args(global->active_mask));
+	seq_printf(m, "throttle: %*pbl\n", cpumask_pr_args(global->throttle_mask));
 	return 0;
 }
 
