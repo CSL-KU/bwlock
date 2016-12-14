@@ -71,7 +71,7 @@ bw_lock()/bw_unlock().
 Publication
 =============
 
-Heechul Yun, Waqar Ali, Santosh Gondi, Siddhartha Biswas. "Protecting Memory-Performance Critical Sections in Soft Real-Time Applications," IEEE Transactions on Computer Brief, 2017 [pdf](http://ittc.ku.edu/~heechul/papers/bwlock-tc2017.pdf).
+Heechul Yun, Waqar Ali, Santosh Gondi, Siddhartha Biswas. "Protecting Memory-Performance Critical Sections in Soft Real-Time Applications," IEEE Transactions on Computer Brief, 2017 [`[pdf]`](http://ittc.ku.edu/~heechul/papers/bwlock-tc2017.pdf).
 
 
 
