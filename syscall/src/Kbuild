@@ -1,0 +1,2 @@
+obj-m := /kernel/bwlockmod.o
+ccflags-y := -I$(src)/include/common 
