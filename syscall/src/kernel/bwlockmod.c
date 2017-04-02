@@ -315,6 +315,9 @@ static void bwlockmod_process_overflow ( struct irq_work *entry )
 	int amount = 0;
 	int i;
 
+	/* Avoid toolset warning without nasty macro use */
+	(void)i;
+
 	BUG_ON (in_nmi () || !in_irq ());
 
 	/* Obtain global spin-lock to serialize access to critical section */
@@ -443,7 +446,7 @@ static void bwlockmod_process_overflow ( struct irq_work *entry )
 	cinfo->throttled_task = current;
 	cinfo->throttled_time = start;
 
-#ifdef USE_BWLOCK_DYNPRIO
+#if USE_BWLOCK_DYNPRIO
 	/* Dynamically lower the throttled task's priority
 	   TBD: register the 'current' task */
 	for (i = 0; i < cinfo->dprio_cnt; i++) {
@@ -540,6 +543,9 @@ static void period_timer_callback_slave ( void *info )
 	long new_period = (long)info;
 	struct task_struct *target;
 	int i;
+
+	/* Avoid toolset warning without nasty macro use */
+	(void)i;
 
 	/* Must be irq disabled. hard irq */
 	BUG_ON(!irqs_disabled());
@@ -1416,6 +1422,8 @@ static int bwlockmod_control_show ( struct seq_file *m,
 				    void *v )
 {
 	struct bwlockmod_info *global = &bwlockmod_info;
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 0, 0)
 	char buf[64];
 
 	seq_printf (m, "reclaim: %d\n", g_use_reclaim);
@@ -1425,6 +1433,12 @@ static int bwlockmod_control_show ( struct seq_file *m,
 	seq_printf (m, "active: %s\n", buf);
 	cpulist_scnprintf (buf, 64, global->throttle_mask);
 	seq_printf (m, "throttle: %s\n", buf);
+#else
+	seq_printf(m, "reclaim: %d\n", g_use_reclaim);
+	seq_printf(m, "exclusive: %d\n", g_use_exclusive);
+	seq_printf(m, "active: %*pbl\n", cpumask_pr_args(global->active_mask));
+	seq_printf(m, "throttle: %*pbl\n", cpumask_pr_args(global->throttle_mask));
+#endif
 
 	/* Return to caller */
 	return 0;
@@ -1526,6 +1540,9 @@ static int bwlockmod_limit_show ( struct seq_file *m,
 	struct bwlockmod_info *global = &bwlockmod_info;
 	int i, j, cpu;
 	cpu = get_cpu ();
+
+	/* Avoid toolset warning without nasty macro use */
+	(void)j;
 
 	/* Insert a memory barrier to synchronize across smp cores */
 	smp_mb ();

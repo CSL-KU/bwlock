@@ -45,8 +45,8 @@
 /**************************************************************************
  * Conditional Compilation Options
  *************************************************************************/
-#define USE_DEBUG  		1
-#define USE_BWLOCK_DYNPRIO 	1
+#define USE_DEBUG  		0
+#define USE_BWLOCK_DYNPRIO 	0
 
 /**************************************************************************
  * Public Definitions
@@ -70,6 +70,7 @@
 #  define DEBUG(x) 
 #  define DEBUG_RECLAIM(x)
 #  define DEBUG_USER(x)
+#  define DEBUG_BWLOCK(x)	
 #  define DEBUG_PROFILE(x)
 #endif
 
